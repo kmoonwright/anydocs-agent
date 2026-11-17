@@ -221,9 +221,10 @@ credential. Three things keep it read-only and traceable:
 - Spans are always batched; the per-request `flush_spans()` is what makes a frozen process safe.
   Phoenix and AX share the stock OTLP/HTTP exporter. Do not add a vendor wrapper or the
   `opentelemetry-exporter-otlp` meta-package: either brings grpcio back.
-- `GET /cron/turn` is Vercel Cron's door: `CRON_SECRET`, not the API token, and the same
-  `run_turn` with `user_id=scheduler`. The questions are `config/demo-questions.yaml`; change
-  what the demo asks there, not in code.
+- `GET /cron/turn` is Vercel Cron's door for synthetic demo traffic (`demo_traffic.py`):
+  `CRON_SECRET`, not the API token, and the same `run_turn` as `/invoke`. Every number, question
+  and fault is in `config/demo-traffic.yaml`; change the demo there, not in code. A fault is a
+  request override, so its cause is on the turn span — never a code path that fails on purpose.
 - The function ships without `numpy` or `trafilatura` (about 260 MB of dependencies down to 129
   MB). BM25 is `retrieval._bm25`, a copy of `rank_bm25.BM25Okapi` that
   `tests/unit/test_bm25_parity.py` pins to the original, so the logged stage scores do not move.

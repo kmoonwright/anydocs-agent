@@ -1,0 +1,90 @@
+version: 1
+# Synthetic traffic for the demo project, run by `GET /cron/turn` (see anydocs/demo_traffic.py).
+# Vercel Cron calls every `tick_minutes`; each call starts a session with a probability shaped by
+# the hour, so a weekday expects about `sessions_per_day` sessions at irregular times.
+
+schedule:
+  tick_minutes: 20          # must match the `crons` schedule in vercel.json; a test checks
+  sessions_per_day: 9       # expected on a weekday
+  weekend_factor: 0.5
+  # Relative traffic by UTC hour: quiet overnight in the US, rising from 14:00 UTC (9am Eastern),
+  # flat through the Pacific afternoon, tailing off in the evening.
+  hourly_weights_utc: [3, 2, 1, 1, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1,
+                       2, 3, 5, 6, 7, 7, 6, 6, 6, 5, 4, 3]
+  fault_rate: 0.15          # share of sessions that carry one fault
+
+users: 12                   # sessions come from demo-user-01 .. demo-user-12
+
+# Misconfigurations a real deploy could ship. Each is a request override, so the cause is on the
+# turn span next to the symptom. The fault rides on a session's last turn.
+faults:
+  - name: unknown-reader-model    # the turn fails at its first drafting call
+    overrides: {model_roles: {reader: claude-sonnet-4-9}}
+  - name: unknown-judge-model     # retrieval and drafting succeed; the audit fails late
+    overrides: {model_roles: {judge: claude-sonnet-4-9}}
+  - name: wall-clock-too-low      # the turn stops on its budget and answers with what it has
+    overrides: {policy: {budget: {max_wall_ms: 8000}}}
+  - name: tool-budget-too-low     # one tool call: the Librarian is truncated before it can cite
+    overrides: {policy: {budget: {max_tool_calls_per_turn: 1}}}
+
+# One conversation per session. `corpora` is optional; leaving it out lets the planner choose.
+# The mix is deliberate, so the traces show more than one path through the graph: questions the
+# bundled corpora answer, follow-ups that lean on the session, loosely worded ones that exercise
+# query rewriting, and a few the corpora do not cover, which route to verify with crawl off.
+conversations:
+  - corpora: [arize]
+    turns:
+      - message: How do I send traces from a Python app to Arize AX?
+      - message: Where do I find my space ID for that?
+  - corpora: [arize]
+    turns:
+      - message: What is the difference between a span and a trace in Arize?
+  - corpora: [arize]
+    turns:
+      - message: How do I create a dataset in Arize AX from existing spans?
+      - message: And then how do I run an experiment against it?
+      - message: Can I compare two experiment runs side by side?
+  - corpora: [arize]
+    turns:
+      - message: What is an LLM-as-a-judge evaluator and how do I set one up in Arize?
+      - message: can it run automatically on new traces?
+  - turns:
+      - message: How do I add custom metadata or tags to spans so I can filter on them later?
+  - corpora: [arize]
+    turns:
+      - message: How do sessions work in Arize, and how do I group turns of a conversation?
+  - corpora: [arize]
+    turns:
+      - message: Can I monitor token usage and cost per trace in Arize AX?
+      - message: is there a way to alert when cost spikes?
+  - corpora: [arize]
+    turns:
+      - message: What does the Prompt Hub do and how do I version a prompt?
+  - corpora: [openinference]
+    turns:
+      - message: Which semantic conventions does OpenInference define for LLM spans?
+      - message: What about retriever spans?
+  - corpora: [openinference]
+    turns:
+      - message: How do I instrument LangChain with OpenInference?
+  - corpora: [openinference]
+    turns:
+      - message: What span kinds does OpenInference support, and when is each one used?
+  - corpora: [openinference]
+    turns:
+      - message: How are tool calls represented in OpenInference span attributes?
+  - turns:
+      - message: How do I hide inputs and outputs from traces for privacy?
+  - turns:
+      - message: Does OpenInference work with the OpenAI Agents SDK?
+  - turns:
+      - message: my traces show up but they're all flat, no nesting. why?
+      - message: I'm using async code if that matters
+  - turns:
+      - message: whats the fastest way to get evals running on prod traffic
+  - turns:
+      - message: How do I configure Kubernetes ingress for a Node.js service?
+  - turns:
+      - message: What is the current price of an Arize AX enterprise license?
+  - turns:
+      - message: How do I fine-tune a Llama model on my own data?

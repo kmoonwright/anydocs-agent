@@ -147,7 +147,7 @@ A few environment variables matter only to a deployment:
 | --- | --- |
 | `ANYDOCS_FLUSH_SPANS=true` | Serverless mode: flush spans after every response, run MCP stateless, copy `bundled/` onto the data directory at startup, and refuse to start on a default token or signing key. |
 | `ANYDOCS_CRAWL_MODE`, `ANYDOCS_WRITE_MODE`, `ANYDOCS_DELETE_MODE` | A ceiling below the policy file. A request's `overrides.policy` can tighten these but never raise them. |
-| `CRON_SECRET` | Turns on `GET /cron/turn`: one question from `config/demo-questions.yaml`, run as `user.id=scheduler`. Vercel Cron calls it hourly so a demo project keeps receiving traces. |
+| `CRON_SECRET` | Turns on `GET /cron/turn`, synthetic demo traffic: Vercel Cron calls it every 20 minutes and it starts about nine sessions a weekday at irregular times, from `demo-user-NN` users, a few carrying a deliberate misconfiguration to debug. Tuned in `config/demo-traffic.yaml`. |
 | `ANYDOCS_DATA_DIR`, `ANYDOCS_BUNDLE_DIR` | Where the writable store lives, and where a deploy's shipped corpus is read from. |
 
 An incoming `traceparent` header becomes the parent of the turn span, so a turn started by an AX
@@ -161,7 +161,7 @@ Two hosts, one implementation:
   approval and the stateful MCP session. Its knowledge store is a volume at `/data`.
 - **Vercel** hosts a read-only `/invoke` for the AX agent playground. It answers from the corpus
   in `bundled/` (built with `uv run anydocs bundle --corpus arize --corpus openinference`), with
-  crawl, write and delete locked off, and asks itself one demo question an hour. See
+  crawl, write and delete locked off, and generates a few sessions of demo traffic a day. See
   [docs/deploy.md](docs/deploy.md).
 
 ## Tests

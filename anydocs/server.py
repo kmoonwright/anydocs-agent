@@ -449,39 +449,39 @@ def require_cron_secret(authorization: str = Header(default="")) -> None:
         raise HTTPException(status_code=403, detail="Invalid cron secret")
 
 
-def _demo_questions() -> list[dict[str, Any]]:
-    import yaml
+@_router.get("/cron/turn")
+def cron_turn(
+    force: bool = False,
+    conversation: int | None = None,
+    fault: str | None = None,
+    _: None = Depends(require_cron_secret),
+) -> dict[str, Any]:
+    """One tick of synthetic demo traffic. Usually it starts nothing.
 
-    from anydocs.config import CONFIG_DIR
-
-    with (CONFIG_DIR / "demo-questions.yaml").open() as fh:
-        return (yaml.safe_load(fh) or {}).get("questions") or []
-
-
-@_router.get("/cron/turn", response_model=InvokeResponse)
-def cron_turn(index: int | None = None, _: None = Depends(require_cron_secret)) -> InvokeResponse:
-    """One turn from `config/demo-questions.yaml`, so a demo project keeps receiving traces.
-
-    The same `run_turn` as `/invoke`; only the caller differs. `user.id=scheduler` lets
-    dashboards and evals filter these out. Each turn is its own session: unrelated questions
-    sharing one would boost each other's citations in retrieval, which is a behaviour change,
-    not a grouping. A random pick rather than a rotation, because a serverless process keeps no
-    counter between ticks; `index` pins one, for a manual run.
+    Vercel Cron calls this every few minutes; `demo_traffic.start_probability` decides whether
+    this tick starts a session, so a demo project fills at irregular times. `force` starts one
+    regardless, and `conversation` and `fault` pin what it runs (`fault=` with no value pins no
+    fault), for a manual run.
     """
     import random
+    from datetime import UTC, datetime
 
-    questions = _demo_questions()
-    if not questions:
-        raise HTTPException(status_code=503, detail="config/demo-questions.yaml has no questions")
-    question = questions[index % len(questions)] if index is not None else random.choice(questions)
-    outcome = run_turn(
-        TurnRequest(
-            message=question["message"],
-            user_id="scheduler",
-            corpora=list(question.get("corpora") or []),
+    from anydocs import demo_traffic
+
+    config = demo_traffic.load()
+    rng = random.Random()
+    p = demo_traffic.start_probability(config, datetime.now(UTC))
+    if not force and rng.random() >= p:
+        return {"started": False, "probability": round(p, 4)}
+    try:
+        session, turns, overrides = demo_traffic.plan(
+            config, rng, conversation=conversation, fault=fault
         )
-    )
-    return _to_response(outcome)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from None
+    corpora = list(config["conversations"][session.conversation].get("corpora") or [])
+    demo_traffic.run_session(session, turns, corpora, overrides)
+    return {"started": True, "probability": round(p, 4), **session.__dict__}
 
 
 def _to_response(outcome) -> InvokeResponse:

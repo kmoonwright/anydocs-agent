@@ -142,23 +142,31 @@ Turns take 20–110 s; set the playground's request timeout to 300 s, the functi
 `ANYDOCS_PROJECT_NAME`, so if the two differ the turn may appear in `anydocs-agent` under a parent
 that project does not hold.
 
-## 7. Scheduled demo traces
+## 7. Synthetic demo traffic
 
-`vercel.json` has a cron that calls `GET /cron/turn` at the top of every hour. Each call asks one
-question from `config/demo-questions.yaml` and traces it like any other turn, with
-`user.id=scheduler`, so a demo project always has recent traffic that evals and dashboards can
-filter out. At about $0.02–0.05 a turn, hourly is roughly $1 a day.
+`vercel.json` has a cron that calls `GET /cron/turn` every 20 minutes. Most calls start nothing:
+each one starts a session with a probability shaped by the hour, so a weekday gets about nine
+sessions at irregular times, more in the US working day than overnight, and a weekend half that.
+All of it is `config/demo-traffic.yaml`; `anydocs/demo_traffic.py` holds no numbers.
 
+- **A session** is one to three turns of one conversation under one `session.id`, from one of
+  `demo-user-01` to `demo-user-12`. Filter those users out of evals and dashboards that should
+  show real traffic only.
+- **A fault** rides on about 15% of sessions, on the last turn: an unknown model id for the reader
+  or the judge (the turn fails with an error span), or a wall-clock or tool-call budget set far
+  too low (the answer comes back truncated with low confidence). Each is a request override, so
+  the cause is recorded on the turn span beside the symptom. That is the demo: find the error,
+  read the override.
+- **Cost:** about $0.02–0.05 a turn, so well under $1 a day.
 - `CRON_SECRET` turns it on. Vercel sends it as `Authorization: Bearer $CRON_SECRET`; without it
   the route answers 404. It is not the API token, so either can be rotated alone.
 - Cron jobs run against the production deployment only, and are listed under **Settings → Cron
-  Jobs**, where **Run** fires one immediately. Its result lands in **Logs** under `/cron/turn`.
-- Change the interval in `vercel.json` (`schedule` is cron syntax, UTC). Hobby allows once a day;
-  Pro allows any interval.
-- Change what it asks in `config/demo-questions.yaml`; a test fails if a question names a corpus
-  the bundle does not ship.
-- To run one by hand: `curl -H "Authorization: Bearer $CRON_SECRET" -H "x-vercel-protection-bypass:
-  $B" "$URL/cron/turn?index=0"`.
+  Jobs**. The response says whether the tick started a session (`"started"`) and at what
+  probability.
+- To start one by hand, add `force=true`, and optionally `conversation=N` and `fault=<name>` (or
+  `fault=` for none):
+  `curl -H "Authorization: Bearer $CRON_SECRET" -H "x-vercel-protection-bypass: $B" "$URL/cron/turn?force=true&fault=unknown-judge-model"`.
+- Changing `tick_minutes` means changing the `crons` schedule too; a test fails if they differ.
 
 ## If something fails
 
