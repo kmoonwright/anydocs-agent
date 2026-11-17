@@ -1,0 +1,20 @@
+{
+  "arize": {
+    "created_at": "2026-11-04T20:53:18+00:00",
+    "default_snapshot": "20261104-205318-d24f6d",
+    "name": "arize",
+    "snapshots": [
+      "20261104-205318-d24f6d"
+    ],
+    "source": "https://arize.com/docs/ax"
+  },
+  "openinference": {
+    "created_at": "2026-11-04T21:07:35+00:00",
+    "default_snapshot": "20261104-210735-3a6ded",
+    "name": "openinference",
+    "snapshots": [
+      "20261104-210735-3a6ded"
+    ],
+    "source": "https://github.com/Arize-ai/openinference/tree/main/spec"
+  }
+}

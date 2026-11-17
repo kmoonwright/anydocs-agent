@@ -1,0 +1,15 @@
+# Secrets and local state. Real values live in the Vercel project's env, never in the upload.
+.env
+.env.*
+data/
+.arize-tmp-traces/
+# Not needed to serve a request.
+.venv/
+tests/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.pyc
+docker-compose.yml
+Dockerfile
+docs/

@@ -1,0 +1,58 @@
+# Local development: the agent, a Phoenix collector and redis.
+#
+# `TRACE_TARGET` is the only thing that differs between here and a deployed environment — no
+# code path changes. Set it to `ax` with ARIZE_SPACE_ID and ARIZE_API_KEY to point the same
+# build at Arize AX.
+#
+# Note: this file is written for deployment and is not exercised on a machine without Docker.
+# The equivalent without Docker is `uv run phoenix serve` plus `uv run anydocs serve`.
+
+services:
+  agent:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      TRACE_TARGET: phoenix
+      PHOENIX_ENDPOINT: http://phoenix:6006
+      ANYDOCS_PROJECT_NAME: anydocs-agent
+      ANYDOCS_DATA_DIR: /data
+      ANYDOCS_API_TOKEN: ${ANYDOCS_API_TOKEN:-dev-token}
+      ANYDOCS_SIGNING_KEY: ${ANYDOCS_SIGNING_KEY:-insecure-dev-key}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      SEARCH_PROVIDER: ${SEARCH_PROVIDER:-tavily}
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - anydocs-data:/data
+    depends_on:
+      phoenix:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    ports:
+      - "6006:6006"   # UI and OTLP/HTTP
+      - "4317:4317"   # OTLP/gRPC
+    environment:
+      PHOENIX_WORKING_DIR: /phoenix
+    volumes:
+      - phoenix-data:/phoenix
+
+  # Session memory moves here in build step 8; the service is declared now so the swap is a
+  # one-line change in anydocs/memory/session.py rather than a compose change too.
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  anydocs-data:
+  phoenix-data:

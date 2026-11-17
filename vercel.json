@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "anydocs/server.py": {
+      "maxDuration": 300,
+      "includeFiles": "{bundled,config,anydocs}/**",
+      "excludeFiles": "{tests,data,docs,.arize-tmp-traces}/**"
+    }
+  }
+}
