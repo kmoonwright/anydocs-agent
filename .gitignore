@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.env
+# `vercel env pull` writes .env.local; any .env.* holds real values. The example is the template.
+.env.*
+!.env.example
+# Snapshots, the corpus registry and the spend file are data, not source.
+data/
+# Local Phoenix working directory
+.phoenix/
+# Exported spans from local trace debugging: full turn payloads and local paths.
+.arize-tmp-traces/
+# Vercel's project link and `vercel build` output.
+.vercel/
