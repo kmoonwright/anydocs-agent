@@ -48,6 +48,28 @@ class EmbeddingMismatch(StoreError):
     """
 
 
+def _sqlite_module() -> Any:
+    """The stdlib `sqlite3` if it can load extensions, else `pysqlite3`.
+
+    Some Python builds compile SQLite without extension loading — Vercel's Python runtime is
+    one, and there `enable_load_extension` does not exist, so sqlite-vec cannot load and every
+    search fails. `pysqlite3-binary` bundles a SQLite that can, and is a Linux-only dependency
+    for that reason.
+    """
+    import sqlite3
+
+    if hasattr(sqlite3.Connection, "enable_load_extension"):
+        return sqlite3
+    try:
+        from pysqlite3 import dbapi2
+    except ImportError:
+        raise StoreError(
+            "This Python's sqlite3 cannot load extensions, so sqlite-vec cannot load; "
+            "install pysqlite3-binary"
+        ) from None
+    return dbapi2
+
+
 def _now() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 
@@ -332,15 +354,14 @@ class Snapshot:
     # "if dependency weight matters" — it does, because LanceDB and pyarrow together are 290 MB
     # against a 250 MB serverless function limit, and this is 1 MB.
     #
-    # The sparse side stays `rank_bm25` in process: sqlite-vec covers vectors only, and BM25 over
-    # a snapshot-sized corpus is cheap enough to build per search.
+    # The sparse side stays BM25 in process (`retrieval._bm25`): sqlite-vec covers vectors only,
+    # and BM25 over a snapshot-sized corpus is cheap enough to build per search.
 
     def _connect(self) -> Any:
         """A connection with the vector extension loaded."""
-        import sqlite3
-
         import sqlite_vec
 
+        sqlite3 = _sqlite_module()
         self.index_path.parent.mkdir(parents=True, exist_ok=True)
         db = sqlite3.connect(self.index_path)
         db.row_factory = sqlite3.Row

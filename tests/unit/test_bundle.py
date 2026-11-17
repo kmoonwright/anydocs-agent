@@ -50,3 +50,27 @@ def test_export_refuses_a_corpus_that_cites_local_files(tmp_path, data_dir, monk
     ingest_folder(FIXTURES / "corpus", "local", digest=False, publish=True)
     with pytest.raises(bundle.BundleError, match="file://"):
         bundle.export(data_dir, tmp_path / "bundled", ["local"])
+
+
+def test_a_sqlite_without_extension_loading_falls_back_to_pysqlite3(monkeypatch):
+    """Vercel's Python has no `enable_load_extension`, so sqlite-vec cannot load from it."""
+    import sqlite3
+    import sys
+    import types
+
+    from anydocs.knowledge import store
+
+    assert store._sqlite_module() is sqlite3
+
+    no_loading = types.ModuleType("sqlite3")
+    no_loading.Connection = type("Connection", (), {})
+    monkeypatch.setitem(sys.modules, "sqlite3", no_loading)
+    pysqlite3 = types.ModuleType("pysqlite3")
+    pysqlite3.dbapi2 = types.ModuleType("pysqlite3.dbapi2")
+    monkeypatch.setitem(sys.modules, "pysqlite3", pysqlite3)
+    monkeypatch.setitem(sys.modules, "pysqlite3.dbapi2", pysqlite3.dbapi2)
+    assert store._sqlite_module() is pysqlite3.dbapi2
+
+    monkeypatch.setitem(sys.modules, "pysqlite3", None)
+    with pytest.raises(store.StoreError, match="pysqlite3-binary"):
+        store._sqlite_module()

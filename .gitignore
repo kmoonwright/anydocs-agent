@@ -15,3 +15,6 @@ data/
 .arize-tmp-traces/
 # Vercel's project link and `vercel build` output.
 .vercel/
+.vercel-token
+.anthropic-key
+anthropic.key

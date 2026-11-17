@@ -33,6 +33,9 @@ dependencies = [
     "opentelemetry-exporter-otlp-proto-http>=1.27",
     "mcp>=1.2",
     "sqlite-vec>=0.1.9",
+    # A SQLite that can load extensions, for Python builds whose stdlib one cannot (Vercel's).
+    # Linux-only wheels; `store._sqlite_module` uses it only when the stdlib cannot load one.
+    "pysqlite3-binary>=0.5.4; sys_platform == 'linux'",
     "langgraph>=1.2.19",
     "langchain>=1.4.8",
     "langchain-openai>=1.7.3",
