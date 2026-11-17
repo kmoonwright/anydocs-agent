@@ -1,0 +1,11 @@
+name: analyst
+description: Answers numeric questions from the analytics store.
+model_role: reader
+enabled: true
+tools:
+  - query_metrics
+budget:
+  max_tool_calls: 4
+  max_tokens: 12000
+  deadline_ms: 20000
+result_schema: AnalystResult

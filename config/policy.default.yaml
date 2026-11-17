@@ -1,0 +1,31 @@
+policy: default
+crawl:
+  mode: ask            # off | ask | auto
+  auto_approve_pages: 50
+  max_pages_per_crawl: 500
+  allow_domains: []    # empty = any public domain
+  deny_domains: ["*.internal", "localhost", "127.0.0.1"]
+  respect_robots: true
+  per_domain_rps: 1
+write:
+  mode: auto           # save_note, link_sources, schedule_refresh
+delete:
+  mode: ask            # forget
+web_search:
+  mode: auto
+  max_calls_per_turn: 3
+budget:
+  max_tool_calls_per_turn: 24
+  # Measured against real documentation, not the test fixtures: one turn over the Arize docs
+  # used 65,789 tokens across three searches. Real doc chunks run ~1800 chars, and the reranker
+  # sends 30 of them per search — it is the single largest consumer in a turn. The 60,000 this
+  # replaced was tuned on an 11-page fixture corpus of short pages.
+  max_tokens_per_turn: 250000
+  # Measured against the default model roles: planning and retrieval take ~20s and the Auditor
+  # takes another 25-35s, because it runs a frontier model on every turn by design. 45s — the
+  # figure in the design doc — fails the happy path, so this is the measured value rather than
+  # the illustrative one. Lower it, or move the judge to a cheaper role, if latency matters more
+  # than the verification.
+  # Also measured: the same turn took 105s, against three reranks and an Auditor.
+  max_wall_ms: 240000
+  daily_usd_cap: 25

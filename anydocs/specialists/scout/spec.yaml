@@ -1,0 +1,12 @@
+name: scout
+description: Finds documentation the store lacks.
+model_role: router
+enabled: true
+tools:
+  - web_search
+  - fetch_page
+budget:
+  max_tool_calls: 5
+  max_tokens: 16000
+  deadline_ms: 25000
+result_schema: ScoutResult

@@ -1,0 +1,19 @@
+name: archivist
+description: Turns pages into durable knowledge.
+model_role: summarizer
+enabled: true
+tools:
+  - crawl_site
+  - digest_page
+  - save_note
+  - link_sources
+  - schedule_refresh
+  - diff_page
+  - forget
+budget:
+  # An N-page crawl costs 2N+2 calls: one crawl, then a digest and a save per page. At 24 the
+  # Archivist truncated partway through a 15-page crawl, leaving pages digested but unsaved.
+  max_tool_calls: 120
+  max_tokens: 400000
+  deadline_ms: 900000
+result_schema: ArchivistResult

@@ -1,0 +1,12 @@
+name: auditor
+description: Checks the draft before it ships.
+model_role: judge
+enabled: true
+tools:
+  - get_doc
+  - lint_code
+budget:
+  max_tool_calls: 8
+  max_tokens: 30000
+  deadline_ms: 30000
+result_schema: AuditorResult
