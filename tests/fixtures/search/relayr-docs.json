@@ -1,0 +1,30 @@
+[
+  {
+    "url": "https://docs.relayr.example/",
+    "title": "Relayr documentation",
+    "snippet": "Message delivery SDK: retries, idempotency and delivery receipts. v3 reference and guides.",
+    "domain": "docs.relayr.example",
+    "authority_hint": 0.9
+  },
+  {
+    "url": "https://docs.relayr.example/retries",
+    "title": "Retries — Relayr",
+    "snippet": "Relayr retries on 5xx and connection failures. max_attempts defaults to 5.",
+    "domain": "docs.relayr.example",
+    "authority_hint": 0.88
+  },
+  {
+    "url": "https://blog.example.com/relayr-webhooks-tutorial",
+    "title": "Building webhooks with Relayr — a tutorial",
+    "snippet": "A walkthrough of sending your first webhook with Relayr.",
+    "domain": "blog.example.com",
+    "authority_hint": 0.2
+  },
+  {
+    "url": "https://stackoverflow.com/questions/12345/relayr-retry-limit",
+    "title": "How do I change the Relayr retry limit?",
+    "snippet": "You can pass a RetryPolicy, but I am not sure what the max is.",
+    "domain": "stackoverflow.com",
+    "authority_hint": 0.1
+  }
+]

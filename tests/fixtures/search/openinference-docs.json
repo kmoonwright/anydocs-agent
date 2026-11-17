@@ -1,0 +1,30 @@
+[
+  {
+    "url": "https://arize.com/docs/ax/concepts/otel-openinference/overview",
+    "title": "OpenTelemetry and OpenInference - Arize AX Docs",
+    "snippet": "How OpenTelemetry and OpenInference relate: the tracing standard, the semantic conventions for LLM applications, exporters, resources, sampling and context propagation.",
+    "domain": "arize.com",
+    "authority_hint": 0.95
+  },
+  {
+    "url": "https://arize.com/docs/ax/concepts/otel-openinference/instrumentation-approaches",
+    "title": "Instrumentation approaches - Arize AX Docs",
+    "snippet": "Auto-instrumentation, manual spans, and the tradeoffs between them.",
+    "domain": "arize.com",
+    "authority_hint": 0.92
+  },
+  {
+    "url": "https://github.com/Arize-ai/openinference",
+    "title": "Arize-ai/openinference: OpenInference semantic conventions",
+    "snippet": "Source repository for the OpenInference spec and instrumentors.",
+    "domain": "github.com",
+    "authority_hint": 0.55
+  },
+  {
+    "url": "https://stackoverflow.com/questions/78901234/openinference-vs-opentelemetry",
+    "title": "What is the difference between OpenInference and OpenTelemetry?",
+    "snippet": "I think OpenInference is a wrapper but I'm not sure.",
+    "domain": "stackoverflow.com",
+    "authority_hint": 0.1
+  }
+]

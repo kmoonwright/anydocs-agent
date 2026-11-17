@@ -1,0 +1,19 @@
+<html><head><title>Flags — Lumen</title></head><body><main>
+<h1>Flags</h1>
+<p>A flag is evaluated against the current ruleset and a context dictionary. Evaluation is
+local and returns a default when no rule matches.</p>
+<h2>Evaluating a flag</h2>
+<pre><code>from lumen import Client
+client = Client(sdk_key="lum_...")
+if client.enabled("new-checkout", context={"user_id": "u_1"}):
+    show_new_checkout()</code></pre>
+<h2>Parameters</h2>
+<ul>
+<li><code>key</code> — the flag key, required.</li>
+<li><code>context</code> — a dictionary of targeting attributes. Defaults to empty.</li>
+<li><code>default</code> — returned when no rule matches. Defaults to True as of v3.</li>
+</ul>
+<p>Flag keys are limited to 256 characters as of v3.</p>
+<h2>Caching</h2>
+<p>Rulesets are cached for 60 seconds. This section is new in v3.</p>
+</main></body></html>

@@ -1,0 +1,9 @@
+{
+  "arize": "arize-ax-docs.json",
+  "arize ax": "arize-ax-docs.json",
+  "lumen": "lumen-docs.json",
+  "nothing": "empty.json",
+  "openinference": "openinference-docs.json",
+  "opentelemetry": "openinference-docs.json",
+  "relayr": "relayr-docs.json"
+}

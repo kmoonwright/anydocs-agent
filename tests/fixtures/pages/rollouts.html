@@ -1,0 +1,12 @@
+<html><head><title>Rollouts — Lumen</title></head><body><main>
+<h1>Rollouts</h1>
+<p>A rollout exposes a flag to a percentage of contexts, bucketed by a stable hash of the
+context's user_id so a user does not flip between variants.</p>
+<h2>Percentage rollouts</h2>
+<pre><code>client.rollout("new-checkout", percentage=25)</code></pre>
+<ul>
+<li><code>percentage</code> — 0 to 100, required.</li>
+<li><code>bucket_by</code> — the context attribute to hash. Defaults to user_id.</li>
+</ul>
+<p>Changing bucket_by re-buckets every context, which will move users between variants.</p>
+</main></body></html>

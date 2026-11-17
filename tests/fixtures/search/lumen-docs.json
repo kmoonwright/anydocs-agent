@@ -1,0 +1,16 @@
+[
+  {
+    "url": "https://lumen.example.dev/docs/",
+    "title": "Lumen — Documentation",
+    "snippet": "Lumen is a feature-flag service. Guides, SDK reference and rollout strategies.",
+    "domain": "lumen.example.dev",
+    "authority_hint": 0.85
+  },
+  {
+    "url": "https://lumen.example.dev/docs/sdk/python",
+    "title": "Python SDK — Lumen",
+    "snippet": "Install with pip install lumen-sdk. Evaluate flags with client.enabled().",
+    "domain": "lumen.example.dev",
+    "authority_hint": 0.85
+  }
+]

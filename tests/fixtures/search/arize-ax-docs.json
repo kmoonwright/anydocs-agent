@@ -1,0 +1,23 @@
+[
+  {
+    "url": "https://arize.com/docs/ax",
+    "title": "Arize AX - Arize AX Docs",
+    "snippet": "Arize AX documentation: tracing, evaluation, experiments, datasets, Alyx, Signal, dashboards and agent improvement workflows.",
+    "domain": "arize.com",
+    "authority_hint": 0.95
+  },
+  {
+    "url": "https://arize.com/docs/ax/alyx",
+    "title": "Alyx - Arize AX Docs",
+    "snippet": "Alyx, the AI engineering agent inside Arize AX, for debugging, evaluation and tracing analysis.",
+    "domain": "arize.com",
+    "authority_hint": 0.9
+  },
+  {
+    "url": "https://arize.com/blog/getting-started-with-arize",
+    "title": "Getting started with Arize — a walkthrough",
+    "snippet": "A blog post walking through a first integration.",
+    "domain": "arize.com",
+    "authority_hint": 0.25
+  }
+]
