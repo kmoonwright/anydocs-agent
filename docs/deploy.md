@@ -66,7 +66,7 @@ ANYDOCS_CRAWL_MODE=off
 ANYDOCS_WRITE_MODE=off
 ANYDOCS_DELETE_MODE=off
 TRACE_TARGET=ax
-ANYDOCS_PROJECT_NAME=Agent Experiment Traces
+ANYDOCS_PROJECT_NAME=anydocs-agent
 ARIZE_SPACE_ID=
 ARIZE_API_KEY=
 ANTHROPIC_API_KEY=
@@ -125,7 +125,7 @@ curl -s -XPOST $URL/invoke -H "Authorization: Bearer $T" -H 'Content-Type: appli
    loaded: an answer with no citations and "ran out of budget" means every `search_docs` failed,
    and the turn's trace in AX names why.
 3. The second returns an answer with caveats and `"pending_approval": null`: the crawl stays off.
-4. **Logs** (in the project) show `Tracing to Arize AX (project 'Agent Experiment Traces')`, and
+4. **Logs** (in the project) show `Tracing to Arize AX (project 'anydocs-agent')`, and
    the turn appears in that AX project.
 
 ## 6. Register the remote agent in AX
