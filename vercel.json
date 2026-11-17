@@ -6,5 +6,11 @@
       "includeFiles": "{bundled,config,anydocs}/**",
       "excludeFiles": "{tests,data,docs,.arize-tmp-traces}/**"
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/cron/turn",
+      "schedule": "0 * * * *"
+    }
+  ]
 }

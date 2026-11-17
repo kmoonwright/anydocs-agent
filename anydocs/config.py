@@ -74,6 +74,7 @@ class Settings:
     bundle_dir: Path
     api_token: str
     signing_key: str
+    cron_secret: str
     project_name: str
     trace_target: str
     flush_spans_per_request: bool
@@ -188,6 +189,8 @@ def build_settings() -> Settings:
         bundle_dir=Path(os.getenv("ANYDOCS_BUNDLE_DIR", REPO_ROOT / "bundled")).resolve(),
         api_token=os.getenv("ANYDOCS_API_TOKEN", "dev-token"),
         signing_key=os.getenv("ANYDOCS_SIGNING_KEY", "insecure-dev-key"),
+        # Vercel Cron sends it as a bearer token. Empty means the scheduled-turn route is off.
+        cron_secret=os.getenv("CRON_SECRET", ""),
         project_name=os.getenv("ANYDOCS_PROJECT_NAME", "anydocs-agent"),
         trace_target=os.getenv("TRACE_TARGET", "phoenix").lower(),
         # Serverless hosts freeze the process after the response, so a batched exporter never

@@ -436,6 +436,54 @@ def refresh(
     return report.as_dict()
 
 
+def require_cron_secret(authorization: str = Header(default="")) -> None:
+    """Vercel Cron's credential: `Authorization: Bearer $CRON_SECRET`, on a GET with no body.
+
+    Separate from the API token so the scheduler can be revoked without breaking AX, and so a
+    leaked cron secret buys nothing but more scheduled turns.
+    """
+    expected = get_settings().cron_secret
+    if not expected:
+        raise HTTPException(status_code=404, detail="Scheduled turns are off; set CRON_SECRET")
+    if authorization.removeprefix("Bearer ").strip() != expected:
+        raise HTTPException(status_code=403, detail="Invalid cron secret")
+
+
+def _demo_questions() -> list[dict[str, Any]]:
+    import yaml
+
+    from anydocs.config import CONFIG_DIR
+
+    with (CONFIG_DIR / "demo-questions.yaml").open() as fh:
+        return (yaml.safe_load(fh) or {}).get("questions") or []
+
+
+@_router.get("/cron/turn", response_model=InvokeResponse)
+def cron_turn(index: int | None = None, _: None = Depends(require_cron_secret)) -> InvokeResponse:
+    """One turn from `config/demo-questions.yaml`, so a demo project keeps receiving traces.
+
+    The same `run_turn` as `/invoke`; only the caller differs. `user.id=scheduler` lets
+    dashboards and evals filter these out. Each turn is its own session: unrelated questions
+    sharing one would boost each other's citations in retrieval, which is a behaviour change,
+    not a grouping. A random pick rather than a rotation, because a serverless process keeps no
+    counter between ticks; `index` pins one, for a manual run.
+    """
+    import random
+
+    questions = _demo_questions()
+    if not questions:
+        raise HTTPException(status_code=503, detail="config/demo-questions.yaml has no questions")
+    question = questions[index % len(questions)] if index is not None else random.choice(questions)
+    outcome = run_turn(
+        TurnRequest(
+            message=question["message"],
+            user_id="scheduler",
+            corpora=list(question.get("corpora") or []),
+        )
+    )
+    return _to_response(outcome)
+
+
 def _to_response(outcome) -> InvokeResponse:
     if outcome.pending_approval:
         payload = dict(outcome.pending_approval)

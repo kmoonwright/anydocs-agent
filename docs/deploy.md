@@ -71,9 +71,10 @@ ARIZE_SPACE_ID=
 ARIZE_API_KEY=
 ANTHROPIC_API_KEY=
 OPENAI_API_KEY=
+CRON_SECRET=<random>
 ```
 
-Generate the two secrets with `python3 -c "import secrets; print(secrets.token_hex(32))"`. Mark
+Generate the three secrets with `python3 -c "import secrets; print(secrets.token_hex(32))"`. Mark
 the keys **Sensitive**. Env changes apply only to new deployments: after changing one, use
 **Deployments → ⋯ → Redeploy** on the latest production deployment.
 
@@ -135,8 +136,29 @@ curl -s -XPOST $URL/invoke -H "Authorization: Bearer $T" -H 'Content-Type: appli
   production domain is protected
 - Body: `{"message": "...", "corpora": ["arize"], "overrides": {...}}` — only `message` is required.
 
-Turns take 20–105 s; make sure the playground's request timeout allows that. Run one playground
-row and confirm the turn span sits under `agent.experiment.run`.
+Turns take 20–110 s; set the playground's request timeout to 300 s, the function's
+`maxDuration`. Run one playground row and confirm the turn span sits under
+`agent.experiment.run`. That span is written to the experiment's project and ours to
+`ANYDOCS_PROJECT_NAME`, so if the two differ the turn may appear in `anydocs-agent` under a parent
+that project does not hold.
+
+## 7. Scheduled demo traces
+
+`vercel.json` has a cron that calls `GET /cron/turn` at the top of every hour. Each call asks one
+question from `config/demo-questions.yaml` and traces it like any other turn, with
+`user.id=scheduler`, so a demo project always has recent traffic that evals and dashboards can
+filter out. At about $0.02–0.05 a turn, hourly is roughly $1 a day.
+
+- `CRON_SECRET` turns it on. Vercel sends it as `Authorization: Bearer $CRON_SECRET`; without it
+  the route answers 404. It is not the API token, so either can be rotated alone.
+- Cron jobs run against the production deployment only, and are listed under **Settings → Cron
+  Jobs**, where **Run** fires one immediately. Its result lands in **Logs** under `/cron/turn`.
+- Change the interval in `vercel.json` (`schedule` is cron syntax, UTC). Hobby allows once a day;
+  Pro allows any interval.
+- Change what it asks in `config/demo-questions.yaml`; a test fails if a question names a corpus
+  the bundle does not ship.
+- To run one by hand: `curl -H "Authorization: Bearer $CRON_SECRET" -H "x-vercel-protection-bypass:
+  $B" "$URL/cron/turn?index=0"`.
 
 ## If something fails
 
@@ -150,6 +172,7 @@ row and confirm the turn span sits under `agent.experiment.run`.
 | No spans in AX | Wrong `ARIZE_SPACE_ID`, `ARIZE_API_KEY` or `ANYDOCS_PROJECT_NAME`. |
 | Turn is its own root, not under the run | The playground is not sending `traceparent`, or it calls `/invoke/stream`. |
 | Vercel login page, 302, or a `"protection"` JSON body | Deployment Protection. Use the production domain, or if that is protected too, the bypass header from step 3. |
+| `/cron/turn` 404 | `CRON_SECRET` is unset in Production, or set after the last deploy. |
 | Slow responses even on `/readyz` | The trace collector is unreachable and the flush is retrying; check the Arize endpoint and keys. |
 
 ## Known limits

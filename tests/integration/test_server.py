@@ -284,3 +284,53 @@ def test_serverless_startup_refuses_an_empty_store(tmp_path, monkeypatch):
             create_app()
     finally:
         config.reset_settings_cache()
+
+
+def test_the_scheduled_turn_is_off_without_a_cron_secret(client, monkeypatch):
+    from anydocs import config
+
+    monkeypatch.delenv("CRON_SECRET", raising=False)
+    config.reset_settings_cache()
+    assert client.get("/cron/turn", headers={"Authorization": "Bearer x"}).status_code == 404
+
+
+def test_the_scheduled_turn_runs_a_demo_question_as_the_scheduler(
+    client, monkeypatch, relayr_corpus, scripted, spans
+):
+    from anydocs import config, server, telemetry
+    from anydocs.knowledge.digest import doc_id_for
+
+    monkeypatch.setenv("CRON_SECRET", "cron-secret")
+    config.reset_settings_cache()
+    monkeypatch.setattr(
+        server,
+        "_demo_questions",
+        lambda: [
+            {"message": "unused"},
+            {"message": "how long are receipts kept?", "corpora": ["relayr"]},
+        ],
+    )
+    scripted(_receipts_turn(doc_id_for("relayr", "https://docs.relayr.example/receipts.md")))
+
+    # The API token is not the cron secret: revoking one must not open or break the other.
+    assert client.get("/cron/turn", headers=TOKEN).status_code == 403
+
+    response = client.get("/cron/turn?index=1", headers={"Authorization": "Bearer cron-secret"})
+    assert response.status_code == 200
+    assert "90 days" in response.json()["answer"]
+    assert spans.find(telemetry.TURN).attributes[telemetry.Attr.USER_ID] == "scheduler"
+
+
+def test_every_demo_question_names_only_a_bundled_corpus():
+    """A question pinned to a corpus the deploy does not ship would fail on every tick."""
+    import json
+
+    from anydocs import server
+    from anydocs.config import REPO_ROOT
+
+    bundled = set(json.loads((REPO_ROOT / "bundled" / "corpora.json").read_text()))
+    questions = server._demo_questions()
+    assert len(questions) >= 10
+    for question in questions:
+        assert question["message"].strip()
+        assert set(question.get("corpora") or []) <= bundled, question
