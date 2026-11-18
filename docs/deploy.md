@@ -145,8 +145,8 @@ that project does not hold.
 ## 7. Synthetic demo traffic
 
 `vercel.json` has a cron that calls `GET /cron/turn` every 20 minutes. Most calls start nothing:
-each one starts a session with a probability shaped by the hour, so a weekday gets about nine
-sessions at irregular times, more in the US working day than overnight, and a weekend half that.
+each one starts a session with a probability shaped by the hour, so a weekday gets four or five on
+average, at irregular times, more in the US working day than overnight, and a weekend half that.
 All of it is `config/demo-traffic.yaml`; `anydocs/demo_traffic.py` holds no numbers.
 
 - **A session** is one to three turns of one conversation under one `session.id`, from one of

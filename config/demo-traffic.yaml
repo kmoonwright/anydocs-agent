@@ -5,7 +5,7 @@ version: 1
 
 schedule:
   tick_minutes: 20          # must match the `crons` schedule in vercel.json; a test checks
-  sessions_per_day: 9       # expected on a weekday
+  sessions_per_day: 4.5     # expected on a weekday
   weekend_factor: 0.5
   # Relative traffic by UTC hour: quiet overnight in the US, rising from 14:00 UTC (9am Eastern),
   # flat through the Pacific afternoon, tailing off in the evening.
