@@ -6,9 +6,9 @@
 # takes a temperature. Set both; each adapter sends the one its SDK has and ignores the other,
 # so moving a role between providers does not mean rewriting its config.
 #
-# `effort` is a Claude 5 feature. Claude 4.x models reject it, so the roles below that point at
-# haiku-4-5 leave it unset. If you set it anyway, the adapter drops it after the first rejection
-# and records `model.degraded` on the span rather than failing every call.
+# `effort` is a Claude 5 feature. Claude 4.x models reject it, so `resolve_role` strips it from any
+# model that is not Claude 5 and records `model.degraded` on the span rather than failing every
+# call. Claude 5 models reject a non-default temperature instead, so every role here sets effort.
 #
 # Roles:
 #   router      cheap, fast: query classification, source judging, rerank
@@ -22,14 +22,17 @@ default_provider: anthropic
 roles:
   router:
     provider: anthropic
-    model: claude-haiku-4-5-20251001
+    # Haiku 5.5 is a tenth of Haiku 4.5's price, and planning and reranking are the calls that
+    # need judgment least.
+    model: claude-haiku-5-5
     # One score per candidate, up to 30 of them in a single rerank call.
     max_tokens: 2048
     temperature: 0.0
+    effort: low
 
   summarizer:
     provider: anthropic
-    model: claude-haiku-4-5-20251001
+    model: claude-haiku-5-5
     # A digest of a full-size page is big, and 4096 truncated the largest doc in the test corpus.
     # A truncated tool call is not a partial digest: Anthropic streams tool input as partial JSON,
     # so a response cut off mid-value arrives as a well-formed call whose unclosed field is a raw
@@ -37,6 +40,8 @@ roles:
     # real cause. The limit has to fit the whole output.
     max_tokens: 16384
     temperature: 0.0
+    # A digest is what every later answer reads, so it gets Haiku 5.5's default rather than `low`.
+    effort: medium
 
   reader:
     provider: anthropic
@@ -71,11 +76,16 @@ embeddings:
   dim: 1536
 
 # Per-million-token prices, used for the crawl cost estimate shown at approval
-# and for the daily USD cap. Approximate on purpose; they gate spend, not billing.
+# and for the daily USD cap. Approximate on purpose; they gate spend, not billing. Cache reads are
+# priced as ordinary input, so a cached turn is over-estimated, never under.
+# Haiku 5.5 doubles past 100k input tokens in one call, which no role here comes near.
 pricing:
+  claude-haiku-5-5: {input: 0.10, output: 0.50}
   claude-haiku-4-5-20251001: {input: 1.00, output: 5.00}
-  claude-sonnet-5: {input: 3.00, output: 15.00}
-  claude-opus-5: {input: 15.00, output: 75.00}
+  claude-sonnet-5: {input: 2.00, output: 10.00}
+  claude-sonnet-5-5: {input: 2.00, output: 10.00}
+  claude-opus-5-5: {input: 4.00, output: 20.00}
+  claude-opus-5: {input: 5.00, output: 25.00}
   gpt-4.1-mini: {input: 0.40, output: 1.60}
   gpt-4.1: {input: 2.00, output: 8.00}
   text-embedding-3-small: {input: 0.02, output: 0.0}

@@ -155,7 +155,8 @@ def run_specialist(
     prompt = load_prompt(name)
     ledger = current_ledger()
 
-    model, cfg = chat_model(role)
+    # A specialist resends its whole history on every tool call, so its prompt is cached.
+    model, cfg = chat_model(role, cache_prompt=True)
     # The allowlist is enforced by construction: the agent is only handed the tools `spec.yaml`
     # names, so there is nothing outside the list for it to reach.
     outcomes = Outcomes()

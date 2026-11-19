@@ -211,3 +211,29 @@ def test_effort_is_dropped_for_a_model_that_rejects_it():
         assert kept.effort, "a Claude 5 model should still be asked for an effort level"
     finally:
         set_role_overrides(None)
+
+
+def test_only_a_tool_loop_asks_for_prompt_caching():
+    """A specialist resends its history on every tool call, so it caches; a one-shot call does not.
+
+    On a one-shot call the marker is a cache write at 1.25x input that nothing reads back.
+    """
+    from anydocs.config import get_settings
+    from anydocs.models.chat import _anthropic_kwargs
+
+    cfg = get_settings().role("reader")
+    cached = _anthropic_kwargs(cfg, cache_prompt=True)
+    assert cached["model_kwargs"] == {"cache_control": {"type": "ephemeral"}}
+    assert "model_kwargs" not in _anthropic_kwargs(cfg)
+
+
+def test_every_claude_5_role_sets_an_effort():
+    """Claude 5 rejects a non-default temperature, which is what a role without effort sends."""
+    from anydocs.config import get_settings
+    from anydocs.models.chat import _EFFORT_CAPABLE
+
+    settings = get_settings()
+    for role in ("router", "summarizer", "reader", "judge", "synthesizer"):
+        cfg = settings.role(role)
+        if cfg.provider == "anthropic" and _EFFORT_CAPABLE.search(cfg.model):
+            assert cfg.effort, f"{role} is on {cfg.model} with no effort"

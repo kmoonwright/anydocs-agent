@@ -17,7 +17,12 @@ from langchain_core.language_models import BaseChatModel
 from anydocs import telemetry
 from anydocs.config import RoleConfig, get_settings
 
-_models: dict[tuple[str, str, str], BaseChatModel] = {}
+_models: dict[tuple[str, str, str, bool], BaseChatModel] = {}
+
+# Top-level `cache_control` marks the last block of each request, so the next request in the same
+# loop reads everything before it at a tenth of the input price. Only a tool loop gains from that:
+# on a one-shot call the marker is a cache write (1.25x input) that nothing ever reads.
+_CACHE_CONTROL = {"type": "ephemeral"}
 
 # Per-request role overrides, e.g. {"judge": "claude-haiku-4-5-20251001"}. Set by the server from
 # `overrides.model_roles` and recorded on the turn span.
@@ -65,39 +70,48 @@ def resolve_role(role: str) -> RoleConfig:
     return cfg
 
 
-def chat_model(role: str) -> tuple[BaseChatModel, RoleConfig]:
+def chat_model(role: str, *, cache_prompt: bool = False) -> tuple[BaseChatModel, RoleConfig]:
     """The chat model for a role, and the config it came from.
 
-    Cached per (provider, model, effort): constructing a client is cheap but not free, and a turn
-    asks for the same role several times.
+    `cache_prompt` turns on Anthropic prompt caching, for callers that resend a growing history:
+    a specialist's tool loop. It changes what a call costs, not what it returns.
+
+    Cached per (provider, model, effort, cache_prompt): constructing a client is cheap but not
+    free, and a turn asks for the same role several times.
     """
     cfg = resolve_role(role)
     fake = _fakes.get(role)
     if fake is not None:
         return fake, cfg
 
-    key = (cfg.provider, cfg.model, cfg.effort)
+    key = (cfg.provider, cfg.model, cfg.effort, cache_prompt)
     model = _models.get(key)
     if model is None:
-        model = _build(cfg)
+        model = _build(cfg, cache_prompt=cache_prompt)
         _models[key] = model
     return model, cfg
 
 
-def _build(cfg: RoleConfig) -> BaseChatModel:
+def _anthropic_kwargs(cfg: RoleConfig, *, cache_prompt: bool = False) -> dict[str, Any]:
+    kwargs: dict[str, Any] = {"model": cfg.model, "max_tokens": cfg.max_tokens}
+    if cache_prompt:
+        kwargs["model_kwargs"] = {"cache_control": _CACHE_CONTROL}
+    if cfg.effort:
+        # Reasoning effort is a Claude 5 feature; Claude 4.x rejects it outright, so it is
+        # only sent when the config asks for it. See `config/models.yaml`.
+        kwargs["output_config"] = {"effort": cfg.effort}
+    else:
+        # The Messages API dropped `temperature` in favour of effort, but LangChain still
+        # forwards it, and 4.x models still accept it.
+        kwargs["temperature"] = cfg.temperature
+    return kwargs
+
+
+def _build(cfg: RoleConfig, *, cache_prompt: bool = False) -> BaseChatModel:
     if cfg.provider == "anthropic":
         from langchain_anthropic import ChatAnthropic
 
-        kwargs: dict[str, Any] = {"model": cfg.model, "max_tokens": cfg.max_tokens}
-        if cfg.effort:
-            # Reasoning effort is a Claude 5 feature; Claude 4.x rejects it outright, so it is
-            # only sent when the config asks for it. See `config/models.yaml`.
-            kwargs["output_config"] = {"effort": cfg.effort}
-        else:
-            # The Messages API dropped `temperature` in favour of effort, but LangChain still
-            # forwards it, and 4.x models still accept it.
-            kwargs["temperature"] = cfg.temperature
-        return ChatAnthropic(**kwargs)
+        return ChatAnthropic(**_anthropic_kwargs(cfg, cache_prompt=cache_prompt))
 
     if cfg.provider == "openai":
         from langchain_openai import ChatOpenAI

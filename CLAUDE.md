@@ -107,6 +107,10 @@ Two provider quirks worth knowing before you edit `models.yaml`:
   just the first. `resolve_role` therefore strips `effort` pre-emptively from any model whose id
   is not Claude 5 and records `model.degraded` on the span. This matters because `--judge-model`
   can point a Claude 5 role at a 4.x model, and without the strip every turn would fail.
+- A specialist's tool loop resends its whole history on every call, so `runner.py` asks for
+  `chat_model(role, cache_prompt=True)` and later calls read that prefix at a tenth of the input
+  price. One-shot calls (`call_role`, `call_role_json`) do not cache: the marker is a write at
+  1.25x input that nothing reads back.
 - The Anthropic SDK is on `httpx2`; `anydocs/tools/http_client.py` is on `httpx`. Patching httpx
   does not reach either provider SDK, so a test that patches httpx globally silently makes real
   network calls instead of failing. Mock the SDK's own transport, or script the model.

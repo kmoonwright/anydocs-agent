@@ -116,7 +116,7 @@ def _no_live_models(monkeypatch):
     """
     from anydocs.models import chat
 
-    def refuse(cfg):
+    def refuse(cfg, **_):
         raise AssertionError(
             f"The test asked for a live {cfg.role!r} model. Install a script with the "
             f"`scripted` fixture, or use a code path that makes no model calls (digest=False)."
