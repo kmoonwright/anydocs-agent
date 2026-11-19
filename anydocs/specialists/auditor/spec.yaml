@@ -10,3 +10,8 @@ budget:
   max_tokens: 30000
   deadline_ms: 30000
 result_schema: AuditorResult
+# Off because a cache write costs 1.25x input and only a later call reads it back. The Auditor
+# makes two or three calls, and the largest input, the documents it fetched, arrives on its last
+# one. Measured on production: 85% of its cached input was written and never read, which made the
+# audit about 8% dearer than uncached. The Librarian's longer loop reads most of what it writes.
+cache_prompt: false

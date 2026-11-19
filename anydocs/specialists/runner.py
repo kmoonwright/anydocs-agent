@@ -95,6 +95,7 @@ class SpecialistSpec:
     result_schema: type[BaseModel]
     description: str = ""
     enabled: bool = True
+    cache_prompt: bool = True
 
     @property
     def prompt_version(self) -> str:
@@ -131,6 +132,7 @@ def load_spec(name: str) -> SpecialistSpec:
         result_schema=RESULT_SCHEMAS[schema_name],
         description=str(raw.get("description", "")),
         enabled=bool(raw.get("enabled", True)),
+        cache_prompt=bool(raw.get("cache_prompt", True)),
     )
 
 
@@ -155,8 +157,9 @@ def run_specialist(
     prompt = load_prompt(name)
     ledger = current_ledger()
 
-    # A specialist resends its whole history on every tool call, so its prompt is cached.
-    model, cfg = chat_model(role, cache_prompt=True)
+    # A specialist resends its whole history on every tool call, so its prompt is cached unless
+    # its spec opts out. See `cache_prompt` in auditor/spec.yaml for when that loses money.
+    model, cfg = chat_model(role, cache_prompt=spec.cache_prompt)
     # The allowlist is enforced by construction: the agent is only handed the tools `spec.yaml`
     # names, so there is nothing outside the list for it to reach.
     outcomes = Outcomes()

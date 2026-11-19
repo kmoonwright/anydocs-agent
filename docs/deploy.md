@@ -157,7 +157,10 @@ All of it is `config/demo-traffic.yaml`; `anydocs/demo_traffic.py` holds no numb
   too low (the answer comes back truncated with low confidence). Each is a request override, so
   the cause is recorded on the turn span beside the symptom. That is the demo: find the error,
   read the override.
-- **Cost:** about $0.02–0.05 a turn, so well under $1 a day.
+- **Cost:** about $0.15–0.20 a turn, measured in AX, with most of it in the Librarian and the
+  Auditor. Conversations average 1.4 turns, so a weekday costs about $1 and a month about $25.
+  The `cost_usd` in the response and on the turn span counts only one-shot calls, not the
+  specialists' tool loops; read cost from the LLM spans in AX.
 - `CRON_SECRET` turns it on. Vercel sends it as `Authorization: Bearer $CRON_SECRET`; without it
   the route answers 404. It is not the API token, so either can be rotated alone.
 - Cron jobs run against the production deployment only, and are listed under **Settings → Cron
